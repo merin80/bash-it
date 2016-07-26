@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 USER_INFO_SSH_CHAR=${POWERLINE_USER_INFO_SSH_CHAR:=" "}
-USER_INFO_THEME_PROMPT_COLOR=32
+USER_INFO_THEME_PROMPT_COLOR=40
 USER_INFO_THEME_PROMPT_COLOR_SUDO=202
 
 PYTHON_VENV_CHAR=${POWERLINE_PYTHON_VENV_CHAR:="❲p❳ "}
@@ -34,6 +34,11 @@ CWD_THEME_PROMPT_COLOR=240
 LAST_STATUS_THEME_PROMPT_COLOR=196
 
 CLOCK_THEME_PROMPT_COLOR=240
+CLOCK_THEME_PROMPT_COLOR_OVERTIME=202
+CLOCK_THEME_PROMPT_COLOR_OVERTIME_LONG=197
+
+OVERTIME_HOURS=8
+OVERTIME_MINUTES=30
 
 BATTERY_AC_CHAR=${BATTERY_AC_CHAR:="⚡"}
 BATTERY_STATUS_THEME_PROMPT_GOOD_COLOR=70
@@ -45,8 +50,8 @@ THEME_PROMPT_CLOCK_FORMAT=${POWERLINE_PROMPT_CLOCK_FORMAT:="%H:%M:%S"}
 IN_VIM_THEME_PROMPT_COLOR=245
 IN_VIM_THEME_PROMPT_TEXT="vim"
 
-POWERLINE_LEFT_PROMPT=${POWERLINE_LEFT_PROMPT:="scm python_venv ruby cwd"}
-POWERLINE_RIGHT_PROMPT=${POWERLINE_RIGHT_PROMPT:="in_vim clock battery user_info"}
+POWERLINE_LEFT_PROMPT=${POWERLINE_LEFT_PROMPT:="user_info clock in_vim scm python_venv cwd"}
+POWERLINE_RIGHT_PROMPT=${POWERLINE_RIGHT_PROMPT:=""}
 
 function set_rgb_color {
   if [[ "${1}" != "-" ]]; then
@@ -63,7 +68,7 @@ function __powerline_user_info_prompt {
   local user_info=""
   local color=${USER_INFO_THEME_PROMPT_COLOR}
 
-  if env | fgrep SUDO_USER 2>&1; then
+  if env | fgrep -i SUDO_USER >/dev/null 2>&1; then
     color=${USER_INFO_THEME_PROMPT_COLOR_SUDO}
   fi
   case "${POWERLINE_PROMPT_USER_INFO_MODE}" in
@@ -136,7 +141,19 @@ function __powerline_cwd_prompt {
 }
 
 function __powerline_clock_prompt {
-  echo "$(date +"${THEME_PROMPT_CLOCK_FORMAT}")|${CLOCK_THEME_PROMPT_COLOR}"
+  uptime=$(</proc/uptime)
+  uptime=${uptime%%.*}
+
+  minutes=$(( uptime/60%60 ))
+  hours=$(( uptime/60/60%24 ))
+
+  if [ ${hours} -ge ${OVERTIME_HOURS} ] && [ ${minutes} -ge ${OVERTIME_MINUTES} ]; then
+    echo "$(date +"${THEME_PROMPT_CLOCK_FORMAT}")|${CLOCK_THEME_PROMPT_COLOR_OVERTIME_LONG}"
+  elif [ "${hours}" -ge ${OVERTIME_HOURS} ]; then
+     echo "$(date +"${THEME_PROMPT_CLOCK_FORMAT}")|${CLOCK_THEME_PROMPT_COLOR_OVERTIME}"
+  else
+     echo "$(date +"${THEME_PROMPT_CLOCK_FORMAT}")|${CLOCK_THEME_PROMPT_COLOR}"
+  fi
 }
 
 function __powerline_battery_prompt {
